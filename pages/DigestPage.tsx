@@ -7,6 +7,7 @@ import { fetchArticlesForTopics } from '../services/rssService';
 import { generateDailyDigest, generateAdditionalSections, explainTerm } from '../services/geminiService';
 import DigestCard from '../components/DigestCard';
 import ChatModal from '../components/ChatModal';
+import { SnakeGame } from '../components/SnakeGame'; 
 import { SparklesIcon, RefreshIcon, PlusCircleIcon, BookIcon, XIcon } from '../components/Icons';
 import { PERSONA_UI_DATA } from '../constants';
 
@@ -174,7 +175,6 @@ const DigestPage: React.FC<DigestPageProps> = ({ changeTab, autoStart, onAutoSta
 
         const personaLabel = PERSONA_UI_DATA[profile.selectedPersona]?.label || profile.selectedPersona;
         
-        // "Nezaberie mi to viac ako minútku..." is REMOVED from here as it is now in Phase 1
         const messages = [
           `Ďakujem za tvoju trpezlivosť...`,
           `Analyzujem ${articleCount} stiahnutých článkov...`,
@@ -383,18 +383,25 @@ const DigestPage: React.FC<DigestPageProps> = ({ changeTab, autoStart, onAutoSta
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-150px)] px-6 text-center animate-in fade-in duration-700">
-        <div className="relative w-20 h-20 mb-8">
-          <div className="absolute top-0 left-0 w-full h-full border-4 border-indigo-200 dark:border-indigo-900 rounded-full animate-ping opacity-25"></div>
-          <div className="absolute top-0 left-0 w-full h-full border-4 border-[#6466f1] rounded-full border-t-transparent animate-spin"></div>
-          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-            <SparklesIcon className="w-6 h-6 text-[#6466f1] animate-pulse" />
-          </div>
+      <div className="relative flex items-center justify-center min-h-[calc(100dvh-150px)] w-full overflow-hidden">
+        
+        {/* Full Screen Snake Game Background */}
+        <SnakeGame />
+
+        {/* Floating Loading Card (Pointer events none allows clicking through to game) */}
+        <div className="relative z-10 flex flex-col items-center justify-center pointer-events-none p-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 dark:border-slate-700">
+            <div className="relative w-16 h-16 mb-4">
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-indigo-200 dark:border-indigo-900 rounded-full animate-ping opacity-25"></div>
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-[#6466f1] rounded-full border-t-transparent animate-spin"></div>
+            <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+                <SparklesIcon className="w-5 h-5 text-[#6466f1] animate-pulse" />
+            </div>
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1 tracking-tight">Pripravujem prehľad</h3>
+            <p className={`text-xs text-slate-500 dark:text-slate-400 font-medium transition-all duration-700 ease-in-out h-4 transform text-center ${fadeProp}`}>
+                {loadingStep}
+            </p>
         </div>
-        <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-1 tracking-tight">Pripravujem váš prehľad</h3>
-        <p className={`text-sm text-slate-500 dark:text-slate-400 font-medium transition-all duration-700 ease-in-out h-6 transform ${fadeProp}`}>
-            {loadingStep}
-        </p>
       </div>
     );
   }
