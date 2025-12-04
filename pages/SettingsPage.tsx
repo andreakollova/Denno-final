@@ -5,6 +5,7 @@ import { getSelectedTopicIds, saveSelectedTopicIds, getUserProfile, setPersona, 
 import { CheckIcon, UserIcon, SparklesIcon, MapPinIcon, ChevronDownIcon, ChevronUpIcon, SettingsIcon, XIcon, MoonIcon, SunIcon, BellIcon, CloudIcon, TrashIcon, MoreHorizontalIcon } from '../components/Icons';
 import { PersonaType, NotificationFrequency, SubscriptionStatus } from '../types';
 import { requestNotificationPermission } from '../services/notificationService';
+import LegalModal, { LegalMode } from '../components/LegalModal';
 
 interface SettingsPageProps {
   onFinish?: () => void;
@@ -40,6 +41,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onFinish, onThemeChange }) 
   
   // Menu State
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [legalMode, setLegalMode] = useState<LegalMode | null>(null);
 
   // File Upload Ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -325,6 +327,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onFinish, onThemeChange }) 
         </div>
       </div>
       
+      {/* Disclaimer */}
+      <div className="mt-6 mb-2 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center leading-relaxed">
+              Aplikácia využíva umelú inteligenciu na spracovanie verejne dostupných správ. 
+              Neručíme za 100% presnosť údajov, hoci sa snažíme čerpať len z kvalitných zdrojov.
+          </p>
+      </div>
+      
       {/* Sticky Bottom Action Button */}
       {selectedIds.length > 0 && onFinish && (
         <div className="fixed bottom-24 left-0 right-0 px-6 z-40 animate-in slide-in-from-bottom-4 duration-500 pointer-events-none flex justify-center">
@@ -358,9 +368,24 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onFinish, onThemeChange }) 
                         </button>
                         {showMoreMenu && (
                             <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 shadow-xl rounded-xl overflow-hidden z-30 animate-in fade-in zoom-in-95">
-                                <a href="#" className="block px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">Podmienky (EULA)</a>
-                                <a href="#" className="block px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">Ochrana súkromia</a>
-                                <a href="#" className="block px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">Kontaktovať podporu</a>
+                                <button 
+                                    onClick={() => { setLegalMode('terms'); setShowMoreMenu(false); }} 
+                                    className="block w-full text-left px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                >
+                                    Podmienky (EULA)
+                                </button>
+                                <button 
+                                    onClick={() => { setLegalMode('privacy'); setShowMoreMenu(false); }} 
+                                    className="block w-full text-left px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                >
+                                    Ochrana súkromia
+                                </button>
+                                <button 
+                                    onClick={() => { setLegalMode('support'); setShowMoreMenu(false); }} 
+                                    className="block w-full text-left px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                >
+                                    Kontaktovať podporu
+                                </button>
                                 <div className="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
                                 <button 
                                     onClick={() => {
@@ -541,6 +566,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onFinish, onThemeChange }) 
                </div>
             </div>
          </div>
+      )}
+
+      {/* Legal Modal */}
+      {legalMode && (
+          <LegalModal 
+            mode={legalMode} 
+            onClose={() => setLegalMode(null)} 
+          />
       )}
 
     </div>

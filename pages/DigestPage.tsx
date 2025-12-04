@@ -458,9 +458,8 @@ const DigestPage: React.FC<DigestPageProps> = ({ changeTab, autoStart, onAutoSta
 
           <button 
             onClick={handleGenerate}
-            className="group relative w-full bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold py-5 px-8 rounded-xl shadow-xl shadow-indigo-500/20 transition-all transform hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
+            className="group relative w-full bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold py-5 px-8 rounded-xl shadow-xl shadow-indigo-500/20 transition-all transform hover:scale-[1.02] active:scale-[0.98] overflow-hidden hover:bg-[#6466f1] dark:hover:bg-[#6466f1] dark:hover:text-white"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-[#6466f1] to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <div className="relative flex items-center justify-center gap-3">
               <SparklesIcon className="w-5 h-5 text-indigo-300 group-hover:text-white transition-colors" />
               <span>Vygenerovať denný prehľad</span>

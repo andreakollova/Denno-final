@@ -282,25 +282,25 @@ export const SnakeGame: React.FC = () => {
             className="absolute transition-transform duration-100 ease-out z-20 pointer-events-auto"
             style={{ 
                 left: headPos.x, 
-                // Adjusted top to be closer to snake (70px up from head)
+                // Adjusted top to be closer to snake (70px up from head - adjusted lower)
                 top: headPos.y - 70, 
                 transform: 'translateX(-85%)' // Shifted to be visible from right edge
             }}
         >
             <div className="flex flex-col items-end animate-in fade-in zoom-in duration-300">
-                <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-2 rounded-2xl rounded-br-none shadow-xl border border-white/50 dark:border-slate-700/50 flex flex-col items-center gap-2">
-                    <span className="text-[10px] font-black text-slate-800 dark:text-slate-100 whitespace-nowrap tracking-tight">
+                <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-5 py-2 rounded-xl rounded-br-none shadow-xl border border-white/50 dark:border-slate-700/50 flex flex-col items-center gap-1.5">
+                    <span className="text-[9px] font-black text-slate-800 dark:text-slate-100 whitespace-nowrap tracking-tight">
                         Máme chviľku? Poďme si zahrať! 🐍
                     </span>
                     <button 
                         onClick={startGame}
-                        className="w-full bg-[#6466f1] hover:bg-indigo-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm hover:shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+                        className="w-full bg-[#6466f1] hover:bg-indigo-700 text-white text-[9px] font-bold px-2 py-1 rounded-md shadow-sm hover:shadow-md transition-all active:scale-95 flex items-center justify-center gap-1"
                     >
                         <span>Začať</span>
                     </button>
                 </div>
                 {/* Triangle - Pointing Right/Down */}
-                <div className="w-3 h-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl transform rotate-45 -mt-1.5 mr-4 border-r border-b border-white/50 dark:border-slate-700/50"></div>
+                <div className="w-2.5 h-2.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl transform rotate-45 -mt-1 mr-4 border-r border-b border-white/50 dark:border-slate-700/50"></div>
             </div>
         </div>
       )}
