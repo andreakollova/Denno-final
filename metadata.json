@@ -1,0 +1,5 @@
+{
+  "name": "Smart City",
+  "description": "Osobný spravodajský asistent, ktorý generuje denný súhrn noviniek pomocou AI na základe vašich záujmov.",
+  "requestFramePermissions": []
+}
