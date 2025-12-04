@@ -6,7 +6,7 @@ const SPEED = 2.5;
 const TURN_SPEED = 0.15;
 const TAIL_LENGTH = 20; // Shorter start
 const GROWTH_PER_FOOD = 10; // Grow by 10 segments per food
-const SEGMENT_SPACING = 4;
+const SEGMENT_SPACING = 4; // Used for length calculation and collision optimization
 const SNAKE_WIDTH = 4;
 const SNAKE_COLOR = '#6466f1'; // Solid Purple
 const FOOD_COLOR = '#fbbf24';  // Solid Amber
@@ -63,16 +63,44 @@ export const SnakeGame: React.FC = () => {
 
     const spawnFood = () => {
       const margin = 20;
-      food.current = {
-        x: margin + Math.random() * (width.current - 2 * margin),
-        y: margin + Math.random() * (height.current - 2 * margin)
-      };
+      let valid = false;
+      let newX = 0;
+      let newY = 0;
+      let attempts = 0;
+
+      const centerX = width.current / 2;
+      const centerY = height.current / 2;
+      
+      // Define Forbidden Zone (Center area where Loading UI is)
+      const forbiddenW = 340; 
+      const forbiddenH = 250;
+
+      while (!valid && attempts < 100) {
+        newX = margin + Math.random() * (width.current - 2 * margin);
+        newY = margin + Math.random() * (height.current - 2 * margin);
+
+        // Check collision with Forbidden Zone
+        const inBoxX = newX > (centerX - forbiddenW/2) && newX < (centerX + forbiddenW/2);
+        const inBoxY = newY > (centerY - forbiddenH/2) && newY < (centerY + forbiddenH/2);
+
+        if (!inBoxX || !inBoxY) {
+            valid = true;
+        }
+        attempts++;
+      }
+      
+      // Fallback (corner) if somehow we fail to find a spot
+      if (!valid) {
+          newX = margin;
+          newY = margin;
+      }
+
+      food.current = { x: newX, y: newY };
     };
 
     // Initialization
     const initGame = (fullReset = false) => {
       // Start at Bottom RIGHT, very low (10px padding from bottom for radius)
-      // Snake is 4px wide, head radius 3. So 30px is safe margin.
       const startX = width.current > 0 ? width.current - 50 : 300;
       const startY = height.current > 0 ? height.current - 30 : 500;
 
@@ -140,7 +168,7 @@ export const SnakeGame: React.FC = () => {
         }
 
         // 6. Self Collision
-        // Only check segments that are not immediately close to head
+        // Optimization: Skip adjacent segments, check every few
         for (let i = 15; i < history.current.length; i += SEGMENT_SPACING) {
             const seg = history.current[i];
             const distHead = Math.sqrt(Math.pow(pos.current.x - seg.x, 2) + Math.pow(pos.current.y - seg.y, 2));
@@ -151,15 +179,12 @@ export const SnakeGame: React.FC = () => {
 
             if (distHead < 5 && segJump < 50) {
                 initGame(true); // Crash! Restart completely (Reset position to start)
-                return; // Exit loop
             }
         }
       }
 
       // Update bubble position state less frequently for performance, but sync ensures smoothness
-      // We assume simple position for bubble
       if (!isPlayingRef.current) {
-          // Keep head pos updated for bubble while waiting
           setHeadPos({ ...pos.current });
       }
 
@@ -167,10 +192,19 @@ export const SnakeGame: React.FC = () => {
       ctx.clearRect(0, 0, width.current, height.current);
 
       // Draw Food (Dot)
-      ctx.fillStyle = FOOD_COLOR;
-      ctx.beginPath();
-      ctx.arc(food.current.x, food.current.y, 4, 0, Math.PI * 2);
-      ctx.fill();
+      if (!isNaN(food.current.x) && !isNaN(food.current.y)) {
+        ctx.fillStyle = FOOD_COLOR;
+        ctx.beginPath();
+        ctx.arc(food.current.x, food.current.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Glow effect
+        ctx.strokeStyle = 'rgba(251, 191, 36, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(food.current.x, food.current.y, 10, 0, Math.PI * 2);
+        ctx.stroke();
+      }
 
       // Draw Snake
       ctx.lineCap = 'round';
@@ -182,24 +216,20 @@ export const SnakeGame: React.FC = () => {
       if (history.current.length > 0) {
           ctx.moveTo(history.current[0].x, history.current[0].y);
           
-          let lastIndex = 0;
-          // Loop through segments using spacing
-          for (let i = SEGMENT_SPACING; i < history.current.length; i += SEGMENT_SPACING) {
-              const p1 = history.current[lastIndex]; // Previous drawn point
-              const p2 = history.current[i];         // Next point to draw
+          // Draw EVERY point for maximum smoothness
+          for (let i = 1; i < history.current.length; i++) {
+              const p1 = history.current[i-1];
+              const p2 = history.current[i];
               
-              // Calculate distance between the points we are about to connect
-              const dist = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+              // Calculate squared distance
+              const distSq = (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
               
-              // If distance is large (e.g., > 100px), it means we wrapped around screen. 
-              // Don't draw a line across the screen; move to the new point instead.
-              if (dist > 100) {
+              // If distance is large (> 2500 = 50px^2), it's a wraparound jump. Break the line.
+              if (distSq > 2500) {
                   ctx.moveTo(p2.x, p2.y);
               } else {
                   ctx.lineTo(p2.x, p2.y);
               }
-              
-              lastIndex = i;
           }
       }
       ctx.stroke();
@@ -252,25 +282,25 @@ export const SnakeGame: React.FC = () => {
             className="absolute transition-transform duration-100 ease-out z-20 pointer-events-auto"
             style={{ 
                 left: headPos.x, 
-                // Adjusted top to be higher above snake (approx 80px up from head)
-                top: headPos.y - 80, 
+                // Adjusted top to be closer to snake (70px up from head)
+                top: headPos.y - 70, 
                 transform: 'translateX(-85%)' // Shifted to be visible from right edge
             }}
         >
             <div className="flex flex-col items-end animate-in fade-in zoom-in duration-300">
-                <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-br-none shadow-xl border border-slate-100 dark:border-slate-700 flex flex-col items-center gap-2">
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                        Ahoj, kým čakáš, zahraj sa 🐍
+                <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-2 rounded-2xl rounded-br-none shadow-xl border border-white/50 dark:border-slate-700/50 flex flex-col items-center gap-2">
+                    <span className="text-[10px] font-black text-slate-800 dark:text-slate-100 whitespace-nowrap tracking-tight">
+                        Máme chviľku? Poďme si zahrať! 🐍
                     </span>
                     <button 
                         onClick={startGame}
-                        className="bg-[#6466f1] hover:bg-indigo-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors w-full"
+                        className="w-full bg-[#6466f1] hover:bg-indigo-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm hover:shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
                     >
-                        Začať
+                        <span>Začať</span>
                     </button>
                 </div>
                 {/* Triangle - Pointing Right/Down */}
-                <div className="w-3 h-3 bg-white dark:bg-slate-800 transform rotate-45 -mt-1.5 mr-4 border-r border-b border-slate-100 dark:border-slate-700"></div>
+                <div className="w-3 h-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl transform rotate-45 -mt-1.5 mr-4 border-r border-b border-white/50 dark:border-slate-700/50"></div>
             </div>
         </div>
       )}

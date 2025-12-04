@@ -383,7 +383,7 @@ const DigestPage: React.FC<DigestPageProps> = ({ changeTab, autoStart, onAutoSta
 
   if (loading) {
     return (
-      <div className="relative flex items-center justify-center min-h-[calc(100dvh-150px)] w-full overflow-hidden">
+      <div className="absolute inset-0 flex items-center justify-center w-full overflow-hidden">
         
         {/* Full Screen Snake Game Background */}
         <SnakeGame />
