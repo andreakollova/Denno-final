@@ -282,13 +282,13 @@ export const SnakeGame: React.FC = () => {
             className="absolute transition-transform duration-100 ease-out z-20 pointer-events-auto"
             style={{ 
                 left: headPos.x, 
-                // Adjusted top to be closer to snake (70px up from head - adjusted lower)
-                top: headPos.y - 70, 
+                // Adjusted top to be closer to snake (80px up from head)
+                top: headPos.y - 80, 
                 transform: 'translateX(-85%)' // Shifted to be visible from right edge
             }}
         >
             <div className="flex flex-col items-end animate-in fade-in zoom-in duration-300">
-                <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-5 py-2 rounded-xl rounded-br-none shadow-xl border border-white/50 dark:border-slate-700/50 flex flex-col items-center gap-1.5">
+                <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-6 py-2 rounded-xl rounded-br-none shadow-xl border border-white/50 dark:border-slate-700/50 flex flex-col items-center gap-1.5">
                     <span className="text-[9px] font-black text-slate-800 dark:text-slate-100 whitespace-nowrap tracking-tight">
                         Máme chviľku? Poďme si zahrať! 🐍
                     </span>

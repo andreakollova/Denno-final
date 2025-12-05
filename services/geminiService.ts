@@ -66,7 +66,7 @@ const shuffleArray = <T>(array: T[]): T[] => {
     return newArray;
 };
 
-export const generateDailyDigest = async (articles: Article[], persona: PersonaType): Promise<DailyDigest> => {
+export const generateDailyDigest = async (articles: Article[], persona: PersonaType, isRegeneration: boolean = false): Promise<DailyDigest> => {
   const ai = getAiClient();
   if (articles.length === 0) {
     throw new Error("Žiadne články na spracovanie.");
@@ -75,22 +75,33 @@ export const generateDailyDigest = async (articles: Article[], persona: PersonaT
   // 1. Sort by date first (Newest first)
   const sortedByDate = articles.sort((a, b) => new Date(b.published).getTime() - new Date(a.published).getTime());
 
-  // 2. Logic to Ensure Variety AND Relevance:
-  // - Keep the TOP 20 articles FIXED. These are the "Main Headlines" of the day. We must not lose them.
-  // - Take the next 100 articles and SHUFFLE them. This creates variety in the "secondary stories" or "niche news".
-  const breakingNews = sortedByDate.slice(0, 20);
-  const otherNews = sortedByDate.slice(20, 120); 
-  const shuffledOthers = shuffleArray(otherNews);
+  let finalPool: Article[] = [];
 
-  // 3. Combine and limit to 80 for token safety
-  // The first 20 are now guaranteed to be the freshest/most important.
-  // The next 60 are random picks from the rest of the day.
-  const finalPool = [...breakingNews, ...shuffledOthers].slice(0, 80);
+  // 2. SELECT ARTICLES STRATEGY
+  if (isRegeneration) {
+      // VARIETY MODE (User clicked "Try Again")
+      // Goal: Show different stories than the first run.
+      // Logic: Take the top 150 articles and SHUFFLE them completely. 
+      // This breaks the "Top 20" lock, allowing newer/niche stories to bubble up to the top spots 
+      // which the AI uses for "V skratke" (Busy Read).
+      const pool = sortedByDate.slice(0, 150);
+      finalPool = shuffleArray(pool).slice(0, 80);
+  } else {
+      // BEST OF BEST MODE (First Run of Day)
+      // Goal: Ensure the user sees the absolute most important news.
+      // Logic: Keep TOP 20 FIXED. Shuffle the rest.
+      const breakingNews = sortedByDate.slice(0, 20); // Guaranteed to be in the prompt
+      const otherNews = sortedByDate.slice(20, 120); 
+      const shuffledOthers = shuffleArray(otherNews);
+      
+      // Combine: 20 Fixed + 60 Random
+      finalPool = [...breakingNews, ...shuffledOthers].slice(0, 80);
+  }
 
-  // Randomize the ORDER of the final pool input to the AI to prevent position bias
+  // 3. Final Shuffle
+  // Randomize the ORDER of the input to the AI to prevent position bias (LLMs focus on start/end).
   const promptInputArticles = shuffleArray(finalPool);
 
-  // Added Link: ${a.link} to the input so AI can reference it
   const articlesText = promptInputArticles.map(a => `Title: ${a.title}\nLink: ${a.link}\nSummary: ${a.summary}\nSource: ${a.source}\n`).join('\n---\n');
 
   const prompt = `Here are the news articles from the last 120 hours:\n\n${articlesText}\n\nCreate a comprehensive digest with 5 to 8 distinct sections. Ensure all titles use Slovak sentence case (only first letter capitalized). IMPORTANT: For each section, you MUST provide the exact 'sourceLink' of the article you used.`;
@@ -100,7 +111,7 @@ export const generateDailyDigest = async (articles: Article[], persona: PersonaT
     contents: prompt,
     config: {
       systemInstruction: getSystemInstructionContent(persona),
-      temperature: 0.7, // Increased temperature for variety
+      temperature: isRegeneration ? 0.85 : 0.7, // Higher temp for regeneration to force different wording/angles
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,

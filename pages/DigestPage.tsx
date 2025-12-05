@@ -25,6 +25,9 @@ const DigestPage: React.FC<DigestPageProps> = ({ changeTab, autoStart, onAutoSta
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState<string>('');
   
+  // Track if we have already seen a digest today to enable "Variety Mode" on subsequent gens
+  const [hasGeneratedToday, setHasGeneratedToday] = useState(false);
+
   // Generate More State
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadingMoreText, setLoadingMoreText] = useState('');
@@ -58,12 +61,14 @@ const DigestPage: React.FC<DigestPageProps> = ({ changeTab, autoStart, onAutoSta
             if (todayStr !== currentStr) {
                 console.log("New day detected, resetting to Home Screen...");
                 setCurrentDate(now);
+                setHasGeneratedToday(false); // Reset variety flag for new day
                 
                 const todayId = now.toISOString().split('T')[0];
                 const existing = getDigestById(todayId);
                 
                 if (existing) {
                     setDigest(existing);
+                    setHasGeneratedToday(true);
                 } else {
                     setDigest(null);
                 }
@@ -83,8 +88,11 @@ const DigestPage: React.FC<DigestPageProps> = ({ changeTab, autoStart, onAutoSta
   useEffect(() => {
     const todayId = new Date().toISOString().split('T')[0];
     const existing = getDigestById(todayId);
-    if (existing && !autoStart) {
-      setDigest(existing);
+    if (existing) {
+      if (!autoStart) {
+        setDigest(existing);
+      }
+      setHasGeneratedToday(true);
     }
     setProfile(getUserProfile());
   }, [lastSave]);
@@ -234,10 +242,14 @@ const DigestPage: React.FC<DigestPageProps> = ({ changeTab, autoStart, onAutoSta
       setArticleCount(articles.length);
       setIsAiProcessing(true);
 
-      const newDigest = await generateDailyDigest(articles, profile.selectedPersona);
+      // Determine if this is a regeneration (Variety Mode) or First Run (Best of Best)
+      const isRegeneration = hasGeneratedToday;
+
+      const newDigest = await generateDailyDigest(articles, profile.selectedPersona, isRegeneration);
       
       saveDigest(newDigest);
       setDigest(newDigest);
+      setHasGeneratedToday(true); // Mark that we have now generated content for today
       
       const newProfile = getUserProfile();
       setProfile(newProfile); 

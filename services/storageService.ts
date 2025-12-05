@@ -120,11 +120,11 @@ export const getUserProfile = (): UserProfile => {
     }
     if (!parsed.notificationFrequency) parsed.notificationFrequency = NotificationFrequency.DAILY;
     
-    // Initialize Subscription if missing
-    if (!parsed.subscriptionStatus) {
-        parsed.subscriptionStatus = SubscriptionStatus.TRIAL;
+    // FREE APP LOGIC: Force everyone to LIFETIME status for this version
+    // This ensures no paywall is ever shown even for old users
+    if (parsed.subscriptionStatus !== SubscriptionStatus.LIFETIME) {
+        parsed.subscriptionStatus = SubscriptionStatus.LIFETIME;
         parsed.subscriptionPlan = SubscriptionPlan.NONE;
-        parsed.trialStartDate = Date.now();
     }
 
     // Initialize Completed Topics if missing
@@ -140,6 +140,8 @@ export const getUserProfile = (): UserProfile => {
     
     return parsed;
   }
+  
+  // Default Profile for New Users (Completely Free)
   return {
     streak: 0,
     longestStreak: 0,
@@ -151,8 +153,8 @@ export const getUserProfile = (): UserProfile => {
     theme: 'light', // Default to light
     notificationFrequency: NotificationFrequency.DAILY,
     lastNotification: 0,
-    // New Subscription Defaults
-    subscriptionStatus: SubscriptionStatus.TRIAL,
+    // Subscription Defaults - FREE VERSION
+    subscriptionStatus: SubscriptionStatus.LIFETIME,
     subscriptionPlan: SubscriptionPlan.NONE,
     trialStartDate: Date.now(),
     completedLearningTopics: []
@@ -175,41 +177,17 @@ export const markLearningTopicComplete = (topic: string) => {
 };
 
 export const getTrialDaysLeft = (): number => {
-    const profile = getUserProfile();
-    if (profile.subscriptionStatus !== SubscriptionStatus.TRIAL) return 0;
-    
-    const now = Date.now();
-    const trialLength = 7 * 24 * 60 * 60 * 1000;
-    const diff = now - profile.trialStartDate;
-    const remaining = Math.max(0, Math.ceil((trialLength - diff) / (24 * 60 * 60 * 1000)));
-    return remaining;
+    // Always return 0 or logic irrelevant since we are Lifetime
+    return 0;
 };
 
 // Check if user has access
 export const checkSubscriptionAccess = (): boolean => {
     const profile = getUserProfile();
-    
+    // Always grant access in Free Version
     if (profile.subscriptionStatus === SubscriptionStatus.LIFETIME) return true;
-    if (profile.subscriptionStatus === SubscriptionStatus.ACTIVE) {
-        // In real app, check receipt expiry date here
-        return true;
-    }
-
-    if (profile.subscriptionStatus === SubscriptionStatus.TRIAL) {
-        const now = Date.now();
-        const trialLength = 7 * 24 * 60 * 60 * 1000; // 7 days
-        const diff = now - profile.trialStartDate;
-        
-        if (diff > trialLength) {
-            // Trial Expired
-            const updated = { ...profile, subscriptionStatus: SubscriptionStatus.EXPIRED };
-            saveUserProfile(updated);
-            return false;
-        }
-        return true;
-    }
-
-    return false; // Expired
+    
+    return true; // Fallback to true
 };
 
 // Activate plan (Mock payment success)
@@ -225,6 +203,7 @@ export const activateSubscription = (plan: SubscriptionPlan) => {
 
 // Unlock via Secret Code
 export const redeemSecretCode = (code: string): boolean => {
+    // Logic kept but UI hidden
     if (code.trim() === SECRET_CODE) {
         const profile = getUserProfile();
         saveUserProfile({
@@ -239,14 +218,7 @@ export const redeemSecretCode = (code: string): boolean => {
 
 // TESTING HELPER: Force expire the trial to test UI
 export const simulateTrialExpiry = () => {
-    const profile = getUserProfile();
-    // Set start date to 8 days ago
-    const pastDate = Date.now() - (8 * 24 * 60 * 60 * 1000);
-    saveUserProfile({
-        ...profile,
-        subscriptionStatus: SubscriptionStatus.TRIAL, // Will be auto-converted to EXPIRED on check
-        trialStartDate: pastDate
-    });
+    // Disabled for production
 };
 
 
